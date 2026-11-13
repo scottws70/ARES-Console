@@ -881,6 +881,35 @@ $('#btnJs8Launch').onclick = async () => {
 setInterval(() => { if ($('#tabs button.active')?.dataset.tab === 'js8') js8AppState(); }, 3000);
 js8AppState();
 
+/* ---------------------------------------------------------------- rigctld / ARDOP launchers */
+const HELPER_NAMES = { rigctld: 'rigctld', ardop: 'ARDOP' };
+async function helperState() {
+  let st; try { st = await (await fetch('/api/helpers')).json(); } catch (e) { return; }
+  $$('.helper').forEach(el => {
+    const k = el.dataset.helper, s = st[k], b = el.querySelector('button'), d = el.querySelector('.dot');
+    if (!s || b.dataset.busy) return;
+    d.className = 'dot ' + (s.running ? 'on' : 'off');
+    el.title = s.command ? 'Command: ' + s.command + (s.log ? '\n\nLast output:\n' + s.log : '') : 'No command set (Settings)';
+    if (s.running && s.started_here) { b.textContent = 'Stop ' + HELPER_NAMES[k]; b.disabled = false; b.classList.remove('primary'); b.dataset.act = 'stop'; }
+    else if (s.running) { b.textContent = HELPER_NAMES[k] + ' running'; b.disabled = true; b.classList.remove('primary'); b.dataset.act = ''; }
+    else { b.textContent = 'Start ' + HELPER_NAMES[k]; b.disabled = !s.local; b.classList.add('primary'); b.dataset.act = 'start'; }
+  });
+  $('#helperHint').textContent = (st.rigctld && !st.rigctld.running && !st.rigctld.command) ? 'Set the rigctld command in Settings › Radio' : '';
+}
+$$('.helper button').forEach(b => b.onclick = async () => {
+  const k = b.closest('.helper').dataset.helper, act = b.dataset.act;
+  if (!act) return;
+  if (act === 'stop' && !confirm('Stop ' + HELPER_NAMES[k] + '?')) return;
+  b.disabled = true; b.dataset.busy = '1'; b.textContent = act === 'start' ? 'Starting…' : 'Stopping…';
+  try {
+    const r = await post('/api/helpers/' + k + '/' + act);
+    toast(act === 'stop' ? HELPER_NAMES[k] + ' stopped' : r.already_running ? HELPER_NAMES[k] + ' is already running' : HELPER_NAMES[k] + ' started' + (r.enabled_now ? ' (radio control turned on in Settings)' : ''));
+  } catch (e) { }
+  delete b.dataset.busy; helperState();
+});
+setInterval(() => { if ($('#tabs button.active')?.dataset.tab === 'winlink') helperState(); }, 3000);
+helperState();
+
 /* ---------------------------------------------------------------- about / quit */
 fetch('/api/version').then(r => r.json()).then(v => { $('#aboutInfo').innerHTML = `ARES Console ${esc(v.version)} · data folder: <code>${esc(v.data_dir)}</code> · <a href="https://github.com/scottws70/ARES-Console" target="_blank" rel="noopener">github.com/scottws70/ARES-Console</a>`; }).catch(() => { });
 $('#btnQuit').onclick = async () => {

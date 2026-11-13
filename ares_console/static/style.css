@@ -169,3 +169,10 @@ table.ftab td input { width: 100%; padding: 3px; font-size: 12px; }
 .wfctl label.inline { margin: 0; font-size: 12px; }
 .wf-dev { max-width: 260px; }
 @media (max-width: 900px) { .strip { flex-direction: column; } .vfo { width: 100%; } }
+
+/* rigctld / ARDOP launchers on the Winlink tab */
+.helpers .toolbar { flex-wrap: wrap; gap: 8px 16px; }
+.helper { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.helper .dot { width: 10px; height: 10px; border-radius: 50%; background: #888; display: inline-block; }
+.helper .dot.on { background: #2e9d4a; }
+.helper .dot.off { background: #c0392b; }

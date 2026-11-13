@@ -19,6 +19,7 @@ from . import mcforms, report, wlforms, b2f
 from .aprs import APRSIS, base_call, parse_location, record_position
 from .db import DB, now, jdump
 from .events import bus
+from .helpers import Helper, rigctld_check
 from .js8 import JS8
 from .rig import Rig
 from .tiles import TileCache, count_tiles
@@ -39,6 +40,8 @@ class App:
         self.wl = Winlink(self.db, self.rig)
         self.mcf_cache = None
         self.tiles = TileCache(self.db, data_dir)
+        self.helpers = {"rigctld": Helper("rigctld", "rigctld", data_dir),
+                        "ardop": Helper("ardop", "ARDOP TNC", data_dir)}
         self.aprs.start()
         self.js8.start()
 
@@ -960,6 +963,60 @@ def js8_launch(h):
     for delay in (6, 12, 20):
         threading.Timer(delay, lambda: (not a.js8.connected()) and a.js8.restart()).start()
     return h.send_json({"ok": True, "already_running": False, "enabled_now": enabled_now})
+
+
+# ------------------------------------------------------------------ helper programs (rigctld, ARDOP)
+HELPER_KEYS = {"rigctld": ("rig_command", "rig_host", "rig_port"),
+               "ardop": ("ardop_command", "ardop_host", "ardop_port")}
+
+
+def _helper_conf(a, key):
+    cmd_k, host_k, port_k = HELPER_KEYS[key]
+    port = a.db.get(port_k)
+    cmd = (a.db.get(cmd_k) or "").replace("{port}", str(port))
+    return cmd, a.db.get(host_k) or "127.0.0.1", port
+
+
+@route("GET", r"/api/helpers")
+def helpers_status(h):
+    a = A(h)
+    out = {}
+    for key, hp in a.helpers.items():
+        cmd, host, port = _helper_conf(a, key)
+        st = hp.status(host, port, probe=(key == "rigctld"))
+        st.update({"command": cmd, "port": port,
+                   "local": host in ("127.0.0.1", "localhost", "::1")})
+        out[key] = st
+    return h.send_json(out)
+
+
+@route("POST", r"/api/helpers/(rigctld|ardop)/start")
+def helper_start(h, key):
+    a = A(h)
+    cmd, host, port = _helper_conf(a, key)
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        raise ValueError("%s is set to run on %s, so it must be started on that computer." % (key, host))
+    if key == "rigctld":
+        r = a.helpers[key].start(cmd, host, port, probe=True, verify=rigctld_check)
+    else:
+        r = a.helpers[key].start(cmd, host, port)
+    if key == "rigctld" and a.db.get("rig_enabled") != "1":
+        a.db.set_settings({"rig_enabled": "1"})
+        bus.publish("settings", a.db.settings())
+        r["enabled_now"] = True
+    net = a.net_or_none()
+    if net and not r.get("already_running"):
+        a.db.log(net["id"], "radio", "%s started" % a.helpers[key].title)
+    return h.send_json(dict(r, ok=True))
+
+
+@route("POST", r"/api/helpers/(rigctld|ardop)/stop")
+def helper_stop(h, key):
+    a = A(h)
+    if not a.helpers[key].stop():
+        raise ValueError("%s was not started by ARES Console; close it where it is running."
+                         % a.helpers[key].title)
+    return h.send_json({"ok": True})
 
 
 @route("POST", r"/api/js8/send")

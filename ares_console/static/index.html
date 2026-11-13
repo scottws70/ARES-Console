@@ -155,6 +155,12 @@
 <!-- ============================ WINLINK -->
 <section id="tab-winlink" class="tab">
   <div class="panel radiostrip" id="wlStrip" data-mode="ardop"></div>
+  <div class="panel helpers">
+    <div class="toolbar"><b>Radio programs</b>
+      <span class="helper" data-helper="rigctld"><span class="dot"></span> rigctld <button>Start rigctld</button></span>
+      <span class="helper" data-helper="ardop"><span class="dot"></span> ARDOP <button>Start ARDOP</button></span>
+      <span class="grow"></span><span class="hint" id="helperHint"></span></div>
+  </div>
   <div class="split">
     <div class="col-main">
       <div class="panel">
@@ -252,12 +258,16 @@
       <label class="inline"><input type="checkbox" name="rig_enabled"> Enabled</label>
       <label>rigctld host<input name="rig_host"></label>
       <label>rigctld port<input name="rig_port"></label>
+      <label>rigctld command (Start rigctld button; {port} = port above)<input name="rig_command" placeholder="rigctld -m 1049 -r /dev/ttyUSB0 -s 38400 -t {port}"></label>
+      <p class="hint">-m is the Hamlib rig model (rigctld -l lists them), -r the CAT serial port, -s its baud rate. If JS8Call also controls the radio, set JS8Call's rig to "Hamlib NET rigctl" at 127.0.0.1:4532 so both can share it.</p>
     </fieldset>
     <fieldset><legend>Winlink / ARDOP</legend>
       <label>ARDOP TNC host<input name="ardop_host"></label>
       <label>ARDOP command port<input name="ardop_port"></label>
       <label>ARQ bandwidth<select name="ardop_bw"><option>200MAX</option><option>500MAX</option><option>1000MAX</option><option>2000MAX</option><option>500FORCED</option><option>2000FORCED</option></select></label>
       <label class="inline"><input type="checkbox" name="ardop_ptt_via_rig"> Key PTT through rigctld when ARDOP asks</label>
+      <label>ARDOP command (Start ARDOP button; {port} = command port)<input name="ardop_command" placeholder="ardopcf {port} pulse pulse"></label>
+      <p class="hint">Linux: to pick the radio's sound card, put PULSE_SOURCE=&lt;input name&gt; PULSE_SINK=&lt;output name&gt; in front (names from <code>pactl list short sources</code> / <code>sinks</code>). Windows: ardopcf {port} &lt;input #&gt; &lt;output #&gt;.</p>
       <label>Winlink password<input name="winlink_password" type="password" autocomplete="off"></label>
       <label>Seconds to wait for your download choice<input name="winlink_select_timeout"></label>
       <label>Winlink Standard Forms folder (blank = auto)<input name="wl_forms_dir"></label>

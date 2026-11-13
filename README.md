@@ -68,8 +68,8 @@ The map keeps working when the Internet or power goes out (the app and its map l
 
 1. **Settings**: set the title and subtitle, your callsign, grid and map home location.
 2. **APRS-IS**: works out of the box in receive-only mode (passcode -1).
-3. **Radio**: run `rigctld -m <model> -r /dev/ttyUSB0 -t 4532` and tick *Radio enabled*.
-4. **ARDOP**: run `ardopcf 8515 <capture> <playback>` and enter your Winlink password in Settings. Leave *Key PTT through rigctld* ticked unless ardopcf keys the radio itself.
+3. **Radio**: in Settings › Radio, enter the rigctld command, e.g. `rigctld -m <model> -r /dev/ttyUSB0 -s 38400 -t {port}` (`rigctld -l` lists models), then press **Start rigctld** on the Winlink tab. It checks that the radio answers, and turns on radio control. If JS8Call also controls the radio, set JS8Call's rig to *Hamlib NET rigctl* at `127.0.0.1:4532` so they share it instead of fighting over the serial port.
+4. **ARDOP**: in Settings › Winlink / ARDOP, set the ARDOP command and enter your Winlink password, then press **Start ARDOP** on the Winlink tab. On Linux with PipeWire/PulseAudio, the default `ardopcf {port} pulse pulse` uses the default sound devices; to use the radio's sound card, put `PULSE_SOURCE=<input> PULSE_SINK=<output>` in front (names from `pactl list short sources` / `sinks`). On Windows use `ardopcf {port} <input #> <output #>`. Leave *Key PTT through rigctld* ticked unless ardopcf keys the radio itself. Output from both programs is kept in `rigctld.log` and `ardop.log` in the data folder.
 5. **JS8Call**: in JS8Call open Settings › Reporting and enable the TCP Server API (port 2442), then tick *JS8 enabled*.
 6. **Winlink forms**: the app finds Pat's `~/.local/share/pat/Standard_Forms` automatically. Refresh it with `pat templates update`, or point Settings at any Standard_Forms folder.
 
