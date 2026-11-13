@@ -79,3 +79,7 @@ The map keeps working when the Internet or power goes out (the app and its map l
 - The From and Subject in the "messages waiting" list come from `;PM:` lines, when the server sends them. A P2P station such as Pat sends only the message ID and size.
 - The compact MCForms string follows the MCForms file layout: one code per question, then `[TAG]text`. Check it against JS8Spotter before you use it on the air.
 - By default the server listens on localhost only. If you use `--host 0.0.0.0`, only do it on a trusted network, because there is no login.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Leaflet (bundled in `ares_console/static/vendor/leaflet`) is BSD-2-Clause.
