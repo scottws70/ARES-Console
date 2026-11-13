@@ -32,4 +32,6 @@ Windows may show a SmartScreen warning because the installer isn't code-signed. 
 
 ## Before relying on it in an event
 
-Tested here: the Winlink protocol against Pat in both directions (send, receive, choosing what to download), live APRS-IS, offline maps, the forms, and the reports. **Not yet tested on the air:** ARDOP over HF and a live Winlink CMS login. Try a practice session first.
+**Winlink to CMS isn't available yet.** Over the air, the ARDOP link, PTT and Winlink login all work: they were tested through an RMS gateway. But the live Winlink CMS only accepts approved client programs, and ARES Console hasn't been approved yet, so the CMS ends the session after login. Approval is being requested from the Winlink Development Team. Until then, use ARES Console for the net log, map, forms and JS8, and send Winlink mail with an approved client such as Pat or Winlink Express.
+
+Also tested: the Winlink protocol against Pat (send, receive, choosing what to download), live APRS-IS, offline maps, the forms, and the reports. Try a practice session before an event.
