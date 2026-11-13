@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ARES Console
+GenericName=Net Control Console
+Comment=Emergency net control: check-ins, APRS map, ICS forms, Winlink and JS8Call
+Exec=ares-console
+Icon=ares-console
+Terminal=false
+Categories=HamRadio;Network;Utility;
+Keywords=ARES;RACES;net control;NCS;APRS;Winlink;JS8;ICS;emcomm;
+StartupNotify=false

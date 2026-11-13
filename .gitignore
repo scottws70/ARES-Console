@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.claude/
+*.db
+*.db-journal
+data/
+tiles/
+mcforms/
+.DS_Store
+dist/
+build/

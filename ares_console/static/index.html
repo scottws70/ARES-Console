@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARES Console</title>
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand">
+    <div id="orgTitle">ARES Console</div>
+    <div id="orgSub"></div>
+  </div>
+  <div id="netInfo" class="netinfo"></div>
+  <div class="chips">
+    <span class="chip" id="chipAPRS" title="APRS-IS">APRS</span>
+    <span class="chip" id="chipJS8" title="JS8Call">JS8</span>
+    <span class="chip" id="chipWL" title="Winlink">WL</span>
+    <span class="clock" id="clock"></span>
+  </div>
+</header>
+<nav id="tabs">
+  <button data-tab="net" class="active">Net Log</button>
+  <button data-tab="map">APRS Map</button>
+  <button data-tab="forms">Forms</button>
+  <button data-tab="winlink">Winlink <span class="badge" id="wlBadge"></span></button>
+  <button data-tab="js8">JS8Call</button>
+  <button data-tab="reports">Reports</button>
+  <button data-tab="settings">Settings</button>
+</nav>
+
+<main>
+<!-- ============================ NET LOG -->
+<section id="tab-net" class="tab active">
+  <div id="netClosed" class="panel hidden">
+    <h2>Open a Net</h2>
+    <div class="grid3">
+      <label>Net name<input id="openName" placeholder="Emergency Net"></label>
+      <label>Net Control (call/name)<input id="openNcs"></label>
+      <label>Frequency / Repeater<input id="openFreq" placeholder="146.940 PL 100"></label>
+    </div>
+    <label class="inline"><input type="checkbox" id="openCarry"> Carry over stations still checked in from the previous net</label>
+    <div><button class="primary" id="btnOpenNet">Open Net</button></div>
+  </div>
+  <div id="netOpen" class="split hidden">
+    <div class="col-main">
+      <div class="panel">
+        <form id="addForm" class="addrow" autocomplete="off">
+          <input id="addCall" placeholder="Callsign" required class="w-call">
+          <input id="addName" placeholder="Name" class="w-name">
+          <input id="addTac" placeholder="Tactical" class="w-tac">
+          <input id="addLoc" placeholder="Location (text, grid, or lat,lon)" class="w-loc">
+          <input id="addNotes" placeholder="Notes" class="w-notes">
+          <select id="addStatus"></select>
+          <button class="primary" type="submit">Check In</button>
+        </form>
+        <div class="toolbar">
+          <span id="counts"></span>
+          <span class="grow"></span>
+          <input id="rosterFilter" placeholder="Filter…" class="w-name">
+          <label class="inline"><input type="checkbox" id="hideOut"> Hide checked out</label>
+        </div>
+        <div class="tablewrap">
+          <table id="roster" class="data">
+            <thead><tr><th>#</th><th>Callsign</th><th>Name</th><th>Tactical</th><th>Status</th><th>Location</th><th>Notes</th><th>In</th><th title="Track on APRS">Trk</th><th>Pos</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-side">
+      <div class="panel">
+        <h3>Activity Log</h3>
+        <form id="logForm" class="addrow">
+          <input id="logCall" placeholder="Call" class="w-call">
+          <input id="logText" placeholder="Log entry (Enter to save)" class="grow" required>
+        </form>
+        <div id="activity" class="log"></div>
+      </div>
+      <div class="panel">
+        <button id="btnEditNet">Edit net details</button>
+        <button class="danger" id="btnCloseNet">Close Net…</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MAP -->
+<section id="tab-map" class="tab">
+  <div class="mapwrap">
+    <div id="map"></div>
+    <div class="mapside">
+      <div class="panel">
+        <button class="primary" id="btnDrop">+ Drop location</button>
+        <div class="hint" id="dropHint"></div>
+        <label class="inline"><input type="checkbox" id="showTracks" checked> Show tracks</label>
+        <label class="inline"><input type="checkbox" id="showAllStations"> Show non-net stations</label>
+        <button id="btnFit">Fit all</button>
+      </div>
+      <div class="panel"><h3>Stations</h3><div id="stationList" class="list"></div></div>
+      <div class="panel"><h3>Locations</h3><div id="markerList" class="list"></div></div>
+      <div class="panel" id="offlinePanel">
+        <h3>Offline Map <span id="tileNet" class="chip"></span></h3>
+        <div class="hint" id="tileStats"></div>
+        <div class="grid2">
+          <label>From zoom<select id="seedZmin"></select></label>
+          <label>To zoom<select id="seedZmax"></select></label>
+        </div>
+        <div class="hint" id="seedEst"></div>
+        <div class="row"><button class="primary" id="btnSeed">Save visible area</button><button id="btnSeedCancel" class="hidden">Cancel</button></div>
+        <progress id="seedProg" class="hidden" max="1" value="0" style="width:100%"></progress>
+        <div class="hint" id="seedMsg"></div>
+        <div class="hint">Every tile you view is saved automatically. Use “Save visible area” before an event to store your county at street level. Offline packs (<code>.mbtiles</code>) copied into the tiles folder are used too.</div>
+        <div class="row"><button class="small" id="btnTileRetry">Retry online</button><button class="small danger" id="btnTileClear">Clear cache</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FORMS -->
+<section id="tab-forms" class="tab">
+  <div class="split">
+    <div class="col-side left">
+      <div class="panel">
+        <h3>Create New</h3>
+        <div id="builtinForms" class="btnlist"></div>
+      </div>
+      <div class="panel">
+        <h3>Winlink Standard Forms</h3>
+        <input id="wlSearch" placeholder="Search forms…">
+        <div id="wlForms" class="list tall"></div>
+        <div class="hint" id="wlDir"></div>
+      </div>
+      <div class="panel">
+        <h3>SitRepNet MCForms</h3>
+        <div id="mcForms" class="list"></div>
+        <button id="btnMcfDl">Download / update MCForms</button>
+      </div>
+    </div>
+    <div class="col-main">
+      <div class="panel">
+        <div class="toolbar"><h3>Form Log</h3><span class="grow"></span>
+          <label class="inline"><input type="checkbox" id="formsAll"> All nets</label></div>
+        <div class="tablewrap">
+          <table class="data" id="formLog"><thead><tr><th>#</th><th>Form</th><th>Title</th><th>Dir</th><th>Created</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ WINLINK -->
+<section id="tab-winlink" class="tab">
+  <div class="panel radiostrip" id="wlStrip" data-mode="ardop"></div>
+  <div class="split">
+    <div class="col-main">
+      <div class="panel">
+        <div class="toolbar">
+          <div class="seg" id="boxSeg">
+            <button data-box="inbox" class="active">Inbox</button>
+            <button data-box="outbox">Outbox</button>
+            <button data-box="sent">Sent</button>
+            <button data-box="pending">On Server</button>
+            <button data-box="nodes">Gateways</button>
+          </div>
+          <span class="grow"></span>
+          <button class="primary" id="btnCompose">Compose</button>
+        </div>
+        <div id="boxView"></div>
+      </div>
+      <div class="panel" id="msgView"></div>
+    </div>
+    <div class="col-side">
+      <div class="panel">
+        <h3>Connect</h3>
+        <label>Transport
+          <select id="wlTransport">
+            <option value="ardop">ARDOP (HF radio)</option>
+            <option value="telnet">Telnet to CMS (Internet)</option>
+            <option value="p2p">Telnet P2P (host:port)</option>
+          </select></label>
+        <label id="wlGwWrap">Gateway <select id="wlGateway"></select></label>
+        <div class="grid2" id="wlManual">
+          <label>Callsign<input id="wlGwCall"></label>
+          <label>Dial kHz<input id="wlGwFreq"></label>
+        </div>
+        <label id="wlHostWrap" class="hidden">Host:port<input id="wlHost" placeholder="192.168.1.20:8774"></label>
+        <label>When mail is waiting
+          <select id="wlMode">
+            <option value="interactive">Show list, let me choose</option>
+            <option value="none">List only (download nothing)</option>
+            <option value="all">Download everything</option>
+          </select></label>
+        <div class="row"><button class="primary" id="btnWlConnect">Connect</button><button class="danger" id="btnWlAbort">Abort</button></div>
+        <div id="wlState" class="state"></div>
+      </div>
+      <div class="panel"><h3>Session Log</h3><pre id="wlLog" class="log mono"></pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ JS8 -->
+<section id="tab-js8" class="tab">
+  <div class="panel radiostrip" id="js8Strip" data-mode="js8"></div>
+  <div class="panel">
+    <div class="toolbar"><b>JS8Call</b> <span id="js8Status"></span><span class="grow"></span><span class="hint" id="js8AppState"></span><button class="primary" id="btnJs8Launch">Start JS8Call</button></div>
+    <form id="js8Form" class="addrow">
+      <input id="js8To" placeholder="To (e.g. @ARES, N0CALL)" class="w-tac">
+      <input id="js8Text" placeholder="Message text" class="grow">
+      <button class="primary">Send</button>
+    </form>
+    <div class="hint">Messages are queued in JS8Call for transmission. Enable JS8Call's TCP API (Settings › Reporting) and enable JS8 in ARES Console settings. MCForms (F!xxx) received are decoded automatically.</div>
+    <div class="tablewrap"><table class="data" id="js8Table"><thead><tr><th>Time</th><th>Dir</th><th>From</th><th>To</th><th>SNR</th><th>Text</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ============================ REPORTS -->
+<section id="tab-reports" class="tab">
+  <div class="panel">
+    <h3>Net Summary Reports</h3>
+    <p class="hint">A summary includes the roster, status changes, activity log, map locations, Winlink and JS8 traffic, and the full text of every form logged during the net.</p>
+    <table class="data" id="netsTable"><thead><tr><th>Net</th><th>NCS</th><th>Frequency</th><th>Opened</th><th>Closed</th><th>Stations</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ============================ SETTINGS -->
+<section id="tab-settings" class="tab">
+  <form id="settingsForm" class="panel settings">
+    <fieldset><legend>Organization</legend>
+      <label>Title (header)<input name="org_title"></label>
+      <label>Subtitle<input name="org_subtitle"></label>
+      <label>Status choices (comma separated)<input name="statuses"></label>
+    </fieldset>
+    <fieldset><legend>Station</legend>
+      <label>My callsign<input name="mycall"></label>
+      <label>Operator name<input name="operator_name"></label>
+      <label>Grid square<input name="grid"></label>
+      <label>Map home latitude<input name="home_lat"></label>
+      <label>Map home longitude<input name="home_lon"></label>
+    </fieldset>
+    <fieldset><legend>APRS-IS</legend>
+      <label class="inline"><input type="checkbox" name="aprs_enabled"> Enabled</label>
+      <label>Server<input name="aprs_server"></label>
+      <label>Port<input name="aprs_port"></label>
+      <label>Passcode (-1 = receive only)<input name="aprs_passcode"></label>
+      <label>Extra filter (e.g. r/42.0/-86.0/50)<input name="aprs_extra_filter"></label>
+    </fieldset>
+    <fieldset><legend>Radio (Hamlib rigctld)</legend>
+      <label class="inline"><input type="checkbox" name="rig_enabled"> Enabled</label>
+      <label>rigctld host<input name="rig_host"></label>
+      <label>rigctld port<input name="rig_port"></label>
+    </fieldset>
+    <fieldset><legend>Winlink / ARDOP</legend>
+      <label>ARDOP TNC host<input name="ardop_host"></label>
+      <label>ARDOP command port<input name="ardop_port"></label>
+      <label>ARQ bandwidth<select name="ardop_bw"><option>200MAX</option><option>500MAX</option><option>1000MAX</option><option>2000MAX</option><option>500FORCED</option><option>2000FORCED</option></select></label>
+      <label class="inline"><input type="checkbox" name="ardop_ptt_via_rig"> Key PTT through rigctld when ARDOP asks</label>
+      <label>Winlink password<input name="winlink_password" type="password" autocomplete="off"></label>
+      <label>Seconds to wait for your download choice<input name="winlink_select_timeout"></label>
+      <label>Winlink Standard Forms folder (blank = auto)<input name="wl_forms_dir"></label>
+    </fieldset>
+    <fieldset><legend>JS8Call</legend>
+      <label class="inline"><input type="checkbox" name="js8_enabled"> Enabled</label>
+      <label>Host<input name="js8_host"></label>
+      <label>TCP API port<input name="js8_port"></label>
+      <label>Program to start (Start JS8Call button)<input name="js8_command" placeholder="js8call"></label>
+    </fieldset>
+    <fieldset><legend>Map</legend>
+      <label>Map source<select name="map_source">
+        <option value="usgs_topo">USGS Topo (US, public domain, works offline)</option>
+        <option value="usgs_imagery">USGS Imagery + Topo (US, public domain, works offline)</option>
+        <option value="osm">OpenStreetMap (online only)</option>
+        <option value="custom">Custom tile server (URL below)</option></select></label>
+      <label>Custom tile URL ({z}/{x}/{y}), e.g. your own tile server<input name="map_tiles" placeholder="http://192.168.1.10:8080/tiles/{z}/{x}/{y}.png"></label>
+    </fieldset>
+    <div><button class="primary">Save Settings</button> <span id="setSaved" class="hint"></span></div>
+  </form>
+  <div class="panel">
+    <h3>About</h3>
+    <p class="hint" id="aboutInfo"></p>
+    <button class="danger" id="btnQuit">Quit ARES Console</button>
+    <span class="hint">Stops the program. Your log is saved, and an open net stays open for next time.</span>
+  </div>
+</section>
+</main>
+
+<div id="modal" class="modal hidden"><div class="modal-box"><div class="modal-head"><h3 id="modalTitle"></h3><button class="x" id="modalClose">×</button></div><div id="modalBody"></div></div></div>
+
+<script src="vendor/leaflet/leaflet.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
